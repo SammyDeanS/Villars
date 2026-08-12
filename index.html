@@ -1,0 +1,413 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Villars-sur-Ollon · Mountain Dashboard</title>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+<style>
+  :root{
+    --bg:#070d16; --bg2:#0d1727; --card:rgba(255,255,255,.045); --stroke:rgba(255,255,255,.10);
+    --txt:#eaf1fb; --dim:#8ea3bf; --accent:#5fd3ff; --warm:#ffb45f; --good:#4ade80; --bad:#f87171; --snow:#c9e6ff;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Inter,Roboto,sans-serif;
+    background:
+      radial-gradient(1200px 700px at 12% -10%, #1b3358 0%, transparent 60%),
+      radial-gradient(900px 600px at 92% 0%, #17324a 0%, transparent 55%),
+      linear-gradient(180deg,var(--bg) 0%, var(--bg2) 100%);
+    background-attachment:fixed; color:var(--txt); min-height:100vh; padding:28px 20px 60px;
+    -webkit-font-smoothing:antialiased;
+  }
+  .wrap{max-width:1320px;margin:0 auto}
+  header{display:flex;flex-wrap:wrap;gap:18px;align-items:flex-end;justify-content:space-between;margin-bottom:24px}
+  h1{font-size:30px;font-weight:650;letter-spacing:-.5px}
+  h1 span{color:var(--accent)}
+  .sub{color:var(--dim);font-size:13.5px;margin-top:5px}
+  .alt-switch{display:flex;gap:6px;background:rgba(255,255,255,.05);border:1px solid var(--stroke);padding:5px;border-radius:14px}
+  .alt-switch button{
+    background:none;border:0;color:var(--dim);font:inherit;font-size:13px;padding:9px 15px;border-radius:10px;cursor:pointer;
+    transition:.18s; line-height:1.25; text-align:center
+  }
+  .alt-switch button small{display:block;font-size:10.5px;opacity:.7}
+  .alt-switch button.on{background:linear-gradient(135deg,#2a6fa8,#1d4d7c);color:#fff;box-shadow:0 4px 14px rgba(0,0,0,.35)}
+  .grid{display:grid;gap:16px}
+  .card{
+    background:var(--card);border:1px solid var(--stroke);border-radius:20px;padding:20px 22px;
+    backdrop-filter:blur(12px); position:relative; overflow:hidden;
+  }
+  .card h2{font-size:11.5px;text-transform:uppercase;letter-spacing:1.4px;color:var(--dim);font-weight:600;margin-bottom:14px}
+  .top{grid-template-columns:1.35fr 1fr 1fr}
+  .hero{display:flex;flex-direction:column;justify-content:space-between;
+    background:linear-gradient(135deg,rgba(95,211,255,.13),rgba(255,255,255,.04))}
+  .hero .now{display:flex;align-items:center;gap:18px}
+  .hero .ico{font-size:56px;line-height:1}
+  .hero .deg{font-size:62px;font-weight:250;letter-spacing:-3px}
+  .hero .cond{font-size:16px;font-weight:500}
+  .hero .feels{color:var(--dim);font-size:13px;margin-top:3px}
+  .mini{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-top:20px}
+  .mini div{background:rgba(0,0,0,.22);border-radius:12px;padding:10px 12px}
+  .mini b{display:block;font-size:17px;font-weight:550;margin-top:2px}
+  .mini span{font-size:10.5px;color:var(--dim);text-transform:uppercase;letter-spacing:.7px}
+  .stats{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+  .stat{background:rgba(0,0,0,.2);border-radius:14px;padding:13px 14px}
+  .stat .k{font-size:10.5px;color:var(--dim);text-transform:uppercase;letter-spacing:.8px}
+  .stat .v{font-size:22px;font-weight:500;margin-top:4px}
+  .stat .v em{font-size:12px;font-style:normal;color:var(--dim);margin-left:3px}
+  .compass{width:96px;height:96px;margin:2px auto 6px;position:relative}
+  .compass .ring{position:absolute;inset:0;border-radius:50%;border:1px solid var(--stroke);
+    background:radial-gradient(circle,rgba(95,211,255,.10),transparent 68%)}
+  .compass .needle{position:absolute;left:50%;top:50%;width:3px;height:38px;background:linear-gradient(180deg,var(--accent),transparent);
+    transform-origin:50% 100%;border-radius:3px;transition:transform .7s cubic-bezier(.4,1.4,.5,1)}
+  .compass .lbl{position:absolute;font-size:9.5px;color:var(--dim)}
+  .compass .n{top:3px;left:50%;transform:translateX(-50%)} .compass .s{bottom:3px;left:50%;transform:translateX(-50%)}
+  .compass .e{right:4px;top:50%;transform:translateY(-50%)} .compass .w{left:4px;top:50%;transform:translateY(-50%)}
+  .compass .ctr{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center}
+  .compass .ctr b{font-size:19px;font-weight:550} .compass .ctr i{font-style:normal;font-size:10px;color:var(--dim)}
+  .charts{grid-template-columns:1.6fr 1fr}
+  .chartbox{height:250px;position:relative}
+  .days{display:grid;grid-template-columns:repeat(7,1fr);gap:10px}
+  .day{background:rgba(0,0,0,.2);border-radius:14px;padding:13px 8px;text-align:center;transition:.2s}
+  .day:hover{background:rgba(95,211,255,.10);transform:translateY(-2px)}
+  .day .dn{font-size:11px;color:var(--dim);text-transform:uppercase;letter-spacing:.6px}
+  .day .di{font-size:26px;margin:7px 0 5px}
+  .day .dt{font-size:14px;font-weight:550}
+  .day .dt s{text-decoration:none;color:var(--dim);font-weight:400;margin-left:4px}
+  .day .dp{font-size:10.5px;color:var(--accent);margin-top:5px;min-height:14px}
+  .aqrow{display:flex;align-items:center;gap:20px;flex-wrap:wrap}
+  .gauge{width:132px;height:132px;flex-shrink:0;position:relative}
+  .gauge svg{transform:rotate(-90deg)}
+  .gauge .g-ctr{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center}
+  .gauge .g-ctr b{font-size:30px;font-weight:400} .gauge .g-ctr i{font-style:normal;font-size:10.5px;color:var(--dim);letter-spacing:.8px}
+  .bars{flex:1;min-width:230px;display:flex;flex-direction:column;gap:9px}
+  .bar{display:grid;grid-template-columns:92px 1fr 66px;align-items:center;gap:10px;font-size:12px}
+  .bar .t{color:var(--dim)}
+  .bar .track{height:7px;background:rgba(255,255,255,.08);border-radius:5px;overflow:hidden}
+  .bar .fill{height:100%;border-radius:5px;transition:width .7s}
+  .bar .n{text-align:right;font-variant-numeric:tabular-nums;color:var(--txt)}
+  .links{display:grid;grid-template-columns:repeat(auto-fill,minmax(215px,1fr));gap:10px}
+  .links a{display:flex;gap:11px;align-items:center;text-decoration:none;color:var(--txt);
+    background:rgba(0,0,0,.2);border:1px solid transparent;border-radius:13px;padding:12px 14px;transition:.2s;font-size:13px}
+  .links a:hover{border-color:rgba(95,211,255,.4);background:rgba(95,211,255,.09);transform:translateY(-2px)}
+  .links .ei{font-size:19px}
+  .links small{display:block;color:var(--dim);font-size:10.5px;margin-top:2px}
+  .sunbar{position:relative;height:76px;margin-top:6px}
+  .sunbar .arc{position:absolute;inset:0}
+  .suninfo{display:flex;justify-content:space-between;font-size:12px;color:var(--dim);margin-top:2px}
+  .suninfo b{display:block;color:var(--txt);font-size:15px;font-weight:500}
+  footer{margin-top:26px;text-align:center;color:var(--dim);font-size:11.5px;line-height:1.8}
+  .pill{display:inline-block;padding:3px 10px;border-radius:20px;font-size:11px;margin-left:8px;vertical-align:middle}
+  .loading{opacity:.35;transition:opacity .3s}
+  @media(max-width:1050px){.top,.charts{grid-template-columns:1fr}.days{grid-template-columns:repeat(4,1fr)}}
+  @media(max-width:560px){.days{grid-template-columns:repeat(2,1fr)}.hero .deg{font-size:50px}body{padding:18px 12px 40px}}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header>
+    <div>
+      <h1>Villars-<span>sur-Ollon</span></h1>
+      <div class="sub" id="subtitle">Alpes vaudoises · 46.30° N, 7.06° E — caricamento dati…</div>
+    </div>
+    <div class="alt-switch" id="altSwitch">
+      <button data-i="0" class="on">Villars<small>1 258 m</small></button>
+      <button data-i="1">Bretaye<small>1 829 m</small></button>
+      <button data-i="2">Chamossaire<small>2 120 m</small></button>
+    </div>
+  </header>
+
+  <div class="grid top" style="margin-bottom:16px">
+    <div class="card hero">
+      <div>
+        <h2>Adesso</h2>
+        <div class="now">
+          <div class="ico" id="curIcon">·</div>
+          <div>
+            <div class="deg" id="curTemp">–°</div>
+            <div class="cond" id="curCond">…</div>
+            <div class="feels" id="curFeels"></div>
+          </div>
+        </div>
+      </div>
+      <div class="mini">
+        <div><span>Umidità</span><b id="curHum">–</b></div>
+        <div><span>Pressione</span><b id="curPres">–</b></div>
+        <div><span>Nuvolosità</span><b id="curCloud">–</b></div>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>Vento</h2>
+      <div class="compass">
+        <div class="ring"></div>
+        <div class="needle" id="needle"></div>
+        <div class="lbl n">N</div><div class="lbl e">E</div><div class="lbl s">S</div><div class="lbl w">O</div>
+        <div class="ctr"><b id="windSpd">–</b><i id="windDir">km/h</i></div>
+      </div>
+      <div class="stats">
+        <div class="stat"><div class="k">Raffiche</div><div class="v" id="windGust">–<em>km/h</em></div></div>
+        <div class="stat"><div class="k">Max oggi</div><div class="v" id="windMax">–<em>km/h</em></div></div>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>Montagna</h2>
+      <div class="stats">
+        <div class="stat"><div class="k">Isoterma 0°</div><div class="v" id="frzLvl">–<em>m</em></div></div>
+        <div class="stat"><div class="k">Neve al suolo</div><div class="v" id="snowDepth">–<em>cm</em></div></div>
+        <div class="stat"><div class="k">Neve fresca 24h</div><div class="v" id="snow24">–<em>cm</em></div></div>
+        <div class="stat"><div class="k">Prossimi 3 g.</div><div class="v" id="snow72">–<em>cm</em></div></div>
+        <div class="stat"><div class="k">Visibilità</div><div class="v" id="visib">–<em>km</em></div></div>
+        <div class="stat"><div class="k">UV max oggi</div><div class="v" id="uvMax">–</div></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="grid charts" style="margin-bottom:16px">
+    <div class="card">
+      <h2>Temperatura e precipitazioni · 48 h</h2>
+      <div class="chartbox"><canvas id="tempChart"></canvas></div>
+    </div>
+    <div class="card">
+      <h2>Vento e raffiche · 48 h</h2>
+      <div class="chartbox"><canvas id="windChart"></canvas></div>
+    </div>
+  </div>
+
+  <div class="card" style="margin-bottom:16px">
+    <h2>7 giorni</h2>
+    <div class="days" id="days"></div>
+  </div>
+
+  <div class="grid" style="grid-template-columns:1.25fr 1fr;margin-bottom:16px" id="bottomGrid">
+    <div class="card">
+      <h2>Qualità dell'aria e pollini <span class="pill" id="aqPill"></span></h2>
+      <div class="aqrow">
+        <div class="gauge">
+          <svg width="132" height="132">
+            <circle cx="66" cy="66" r="56" fill="none" stroke="rgba(255,255,255,.08)" stroke-width="11"/>
+            <circle id="gaugeArc" cx="66" cy="66" r="56" fill="none" stroke="#4ade80" stroke-width="11"
+                    stroke-linecap="round" stroke-dasharray="352" stroke-dashoffset="352" style="transition:.9s"/>
+          </svg>
+          <div class="g-ctr"><b id="aqiVal">–</b><i>AQI EUROPEO</i></div>
+        </div>
+        <div class="bars" id="aqBars"></div>
+      </div>
+    </div>
+    <div class="card">
+      <h2>Sole e luce</h2>
+      <div class="sunbar"><canvas class="arc" id="sunArc"></canvas></div>
+      <div class="suninfo">
+        <div>Alba<b id="sunrise">–</b></div>
+        <div style="text-align:center">Ore di luce<b id="daylight">–</b></div>
+        <div style="text-align:right">Tramonto<b id="sunset">–</b></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <h2>Collegamenti utili in valle</h2>
+    <div class="links">
+      <a href="https://www.slf.ch/it/bollettino-valanghe-e-situazione-nivologica/" target="_blank"><span class="ei">⚠️</span><div>Bollettino valanghe SLF<small>Pericolo per le Alpi vodesi</small></div></a>
+      <a href="https://www.slf.ch/it/mappe-neve/" target="_blank"><span class="ei">❄️</span><div>Mappe neve SLF<small>Altezza neve stazioni IMIS</small></div></a>
+      <a href="https://www.meteoswiss.admin.ch/local-forecast/villars-sur-ollon/1884" target="_blank"><span class="ei">🇨🇭</span><div>MeteoSvizzera<small>Previsione locale + allerte</small></div></a>
+      <a href="https://www.villars-diablerets.ch/en/webcams" target="_blank"><span class="ei">📷</span><div>Webcam Villars<small>Bretaye, Chamossaire, villaggio</small></div></a>
+      <a href="https://www.villars-diablerets.ch/en/winter/slopes-and-lifts" target="_blank"><span class="ei">🚡</span><div>Stato impianti<small>Piste e risalite aperte</small></div></a>
+      <a href="https://www.tpc.ch/" target="_blank"><span class="ei">🚂</span><div>TPC Bex–Villars–Bretaye<small>Orari e perturbazioni</small></div></a>
+      <a href="https://map.geo.admin.ch/#/map?center=2570000,1130000&z=6" target="_blank"><span class="ei">🗺️</span><div>Swisstopo<small>Mappe, sentieri, pendenze</small></div></a>
+      <a href="https://www.hydrodaten.admin.ch/it" target="_blank"><span class="ei">🌊</span><div>Idrologia Rodano<small>Portata e temperatura fiumi</small></div></a>
+    </div>
+  </div>
+
+  <footer>
+    Dati: <a href="https://open-meteo.com" style="color:var(--dim)">Open-Meteo</a> (CC BY 4.0) · modelli ICON-CH / MeteoSvizzera · aggiornamento automatico ogni 15 min.<br>
+    <span id="stamp">—</span>
+  </footer>
+</div>
+
+<script>
+const SPOTS = [
+  {name:"Villars-sur-Ollon (villaggio)", lat:46.2986, lon:7.0553, elev:1258},
+  {name:"Bretaye (comprensorio)",        lat:46.3168, lon:7.0669, elev:1829},
+  {name:"Grand Chamossaire (cima)",      lat:46.3267, lon:7.0613, elev:2120}
+];
+let idx = 0, tempChart, windChart;
+
+const WMO = {
+ 0:["Sereno","☀️"],1:["Prevalentemente sereno","🌤️"],2:["Parzialmente nuvoloso","⛅"],3:["Coperto","☁️"],
+ 45:["Nebbia","🌫️"],48:["Nebbia gelata","🌫️"],51:["Pioviggine debole","🌦️"],53:["Pioviggine","🌦️"],55:["Pioviggine intensa","🌦️"],
+ 56:["Pioviggine gelata","🌧️"],57:["Pioviggine gelata","🌧️"],61:["Pioggia debole","🌦️"],63:["Pioggia","🌧️"],65:["Pioggia forte","🌧️"],
+ 66:["Pioggia gelata","🌧️"],67:["Pioggia gelata","🌧️"],71:["Neve debole","🌨️"],73:["Neve","🌨️"],75:["Neve forte","❄️"],
+ 77:["Granuli di neve","🌨️"],80:["Rovesci deboli","🌦️"],81:["Rovesci","🌧️"],82:["Rovesci violenti","⛈️"],
+ 85:["Rovesci di neve","🌨️"],86:["Rovesci di neve forti","❄️"],95:["Temporale","⛈️"],96:["Temporale con grandine","⛈️"],99:["Temporale forte","⛈️"]
+};
+const wmo = c => WMO[c] || ["—","·"];
+const dirName = d => ["N","NNE","NE","ENE","E","ESE","SE","SSE","S","SSO","SO","OSO","O","ONO","NO","NNO"][Math.round(d/22.5)%16];
+
+async function load(){
+  const s = SPOTS[idx];
+  document.querySelectorAll('.card').forEach(c=>c.classList.add('loading'));
+  const fUrl = `https://api.open-meteo.com/v1/forecast?latitude=${s.lat}&longitude=${s.lon}&elevation=${s.elev}`
+    + `&current=temperature_2m,apparent_temperature,relative_humidity_2m,is_day,precipitation,snowfall,weather_code,cloud_cover,pressure_msl,wind_speed_10m,wind_direction_10m,wind_gusts_10m`
+    + `&hourly=temperature_2m,snowfall,snow_depth,precipitation,precipitation_probability,wind_speed_10m,wind_gusts_10m,freezing_level_height,visibility`
+    + `&daily=weather_code,temperature_2m_max,temperature_2m_min,sunrise,sunset,uv_index_max,precipitation_sum,snowfall_sum,precipitation_probability_max,wind_gusts_10m_max`
+    + `&timezone=Europe%2FZurich&forecast_days=7`;
+  const aUrl = `https://air-quality-api.open-meteo.com/v1/air-quality?latitude=${s.lat}&longitude=${s.lon}`
+    + `&current=european_aqi,pm10,pm2_5,ozone,nitrogen_dioxide,sulphur_dioxide,dust`
+    + `&hourly=alder_pollen,birch_pollen,grass_pollen&timezone=Europe%2FZurich&forecast_days=1`;
+
+  try{
+    const [f,a] = await Promise.all([fetch(fUrl).then(r=>r.json()), fetch(aUrl).then(r=>r.json()).catch(()=>null)]);
+    render(f,a,s);
+  }catch(e){
+    document.getElementById('subtitle').textContent = "Impossibile contattare il servizio meteo — controlla la connessione.";
+  }
+  document.querySelectorAll('.card').forEach(c=>c.classList.remove('loading'));
+}
+
+function render(f,a,s){
+  const c = f.current, h = f.hourly, d = f.daily;
+  const [cond,ico] = wmo(c.weather_code);
+  document.getElementById('subtitle').textContent =
+    `${s.name} · ${Math.round(f.elevation)} m s.l.m. · dati modello ${new Date(c.time).toLocaleString('it-CH',{weekday:'short',hour:'2-digit',minute:'2-digit'})}`;
+  document.getElementById('curIcon').textContent = ico;
+  document.getElementById('curTemp').textContent = Math.round(c.temperature_2m) + "°";
+  document.getElementById('curCond').textContent = cond;
+  document.getElementById('curFeels').textContent = `Percepita ${Math.round(c.apparent_temperature)}° · precipitazione ${c.precipitation.toFixed(1)} mm/h`;
+  document.getElementById('curHum').textContent = c.relative_humidity_2m + " %";
+  document.getElementById('curPres').textContent = Math.round(c.pressure_msl) + " hPa";
+  document.getElementById('curCloud').textContent = c.cloud_cover + " %";
+
+  document.getElementById('windSpd').textContent = Math.round(c.wind_speed_10m);
+  document.getElementById('windDir').textContent = `km/h da ${dirName(c.wind_direction_10m)}`;
+  document.getElementById('needle').style.transform = `translate(-50%,-100%) rotate(${c.wind_direction_10m+180}deg)`;
+  document.getElementById('windGust').innerHTML = Math.round(c.wind_gusts_10m) + '<em>km/h</em>';
+  document.getElementById('windMax').innerHTML = Math.round(d.wind_gusts_10m_max[0]) + '<em>km/h</em>';
+
+  // indice ora corrente
+  const now = new Date(); let i0 = h.time.findIndex(t => new Date(t) > now) - 1; if(i0 < 0) i0 = 0;
+  const depth = (h.snow_depth[i0] ?? 0) * 100;
+  const s24 = h.snowfall.slice(Math.max(0,i0-24), i0).reduce((x,y)=>x+(y||0),0);
+  const s72 = (d.snowfall_sum.slice(0,3)).reduce((x,y)=>x+(y||0),0);
+  document.getElementById('frzLvl').innerHTML = Math.round(h.freezing_level_height[i0]) + '<em>m</em>';
+  document.getElementById('snowDepth').innerHTML = depth.toFixed(0) + '<em>cm</em>';
+  document.getElementById('snow24').innerHTML = s24.toFixed(1) + '<em>cm</em>';
+  document.getElementById('snow72').innerHTML = s72.toFixed(1) + '<em>cm</em>';
+  document.getElementById('visib').innerHTML = ((h.visibility[i0]||0)/1000).toFixed(1) + '<em>km</em>';
+  document.getElementById('uvMax').textContent = (d.uv_index_max[0] ?? 0).toFixed(1);
+
+  // ---- grafici 48h
+  const sl = (arr)=>arr.slice(i0, i0+48);
+  const labels = sl(h.time).map(t=>{const x=new Date(t);return x.getHours()===0? x.toLocaleDateString('it-CH',{weekday:'short'}) : (x.getHours()+"h");});
+  const grid = {color:'rgba(255,255,255,.06)'}, tick = {color:'#8ea3bf',font:{size:10},maxRotation:0,autoSkip:true,maxTicksLimit:9};
+  Chart.defaults.font.family = getComputedStyle(document.body).fontFamily;
+
+  const temps = sl(h.temperature_2m), precip = sl(h.precipitation), snows = sl(h.snowfall);
+  if(tempChart) tempChart.destroy();
+  tempChart = new Chart(document.getElementById('tempChart'),{
+    data:{labels, datasets:[
+      {type:'line',label:'Temperatura °C',data:temps,borderColor:'#ffb45f',backgroundColor:'rgba(255,180,95,.14)',
+       borderWidth:2,fill:true,tension:.35,pointRadius:0,yAxisID:'y'},
+      {type:'bar',label:'Pioggia mm',data:precip,backgroundColor:'rgba(95,211,255,.55)',yAxisID:'y1',borderRadius:3},
+      {type:'bar',label:'Neve cm',data:snows,backgroundColor:'rgba(201,230,255,.9)',yAxisID:'y1',borderRadius:3}
+    ]},
+    options:{responsive:true,maintainAspectRatio:false,interaction:{mode:'index',intersect:false},
+      plugins:{legend:{labels:{color:'#8ea3bf',boxWidth:10,font:{size:11}}}},
+      scales:{x:{grid,ticks:tick},
+        y:{position:'left',grid,ticks:{color:'#8ea3bf',font:{size:10},callback:v=>v+'°'}},
+        y1:{position:'right',grid:{display:false},ticks:{color:'#8ea3bf',font:{size:10}},beginAtZero:true,suggestedMax:3}}}
+  });
+
+  if(windChart) windChart.destroy();
+  windChart = new Chart(document.getElementById('windChart'),{
+    type:'line',
+    data:{labels,datasets:[
+      {label:'Raffiche',data:sl(h.wind_gusts_10m),borderColor:'rgba(248,113,113,.85)',backgroundColor:'rgba(248,113,113,.12)',
+       borderWidth:1.5,fill:true,tension:.35,pointRadius:0},
+      {label:'Vento medio',data:sl(h.wind_speed_10m),borderColor:'#5fd3ff',backgroundColor:'rgba(95,211,255,.16)',
+       borderWidth:2,fill:true,tension:.35,pointRadius:0}
+    ]},
+    options:{responsive:true,maintainAspectRatio:false,interaction:{mode:'index',intersect:false},
+      plugins:{legend:{labels:{color:'#8ea3bf',boxWidth:10,font:{size:11}}}},
+      scales:{x:{grid,ticks:tick},y:{grid,beginAtZero:true,ticks:{color:'#8ea3bf',font:{size:10},callback:v=>v+' km/h'}}}}
+  });
+
+  // ---- 7 giorni
+  document.getElementById('days').innerHTML = d.time.map((t,i)=>{
+    const [cn,ic] = wmo(d.weather_code[i]);
+    const dt = new Date(t);
+    const extra = d.snowfall_sum[i] > 0.2 ? `❄ ${d.snowfall_sum[i].toFixed(0)} cm`
+                : d.precipitation_sum[i] > 0.2 ? `💧 ${d.precipitation_sum[i].toFixed(1)} mm · ${d.precipitation_probability_max[i]??0}%` : '';
+    return `<div class="day" title="${cn} · raffiche max ${Math.round(d.wind_gusts_10m_max[i])} km/h">
+      <div class="dn">${i===0?'Oggi':dt.toLocaleDateString('it-CH',{weekday:'short'})} ${dt.getDate()}</div>
+      <div class="di">${ic}</div>
+      <div class="dt">${Math.round(d.temperature_2m_max[i])}°<s>${Math.round(d.temperature_2m_min[i])}°</s></div>
+      <div class="dp">${extra}</div></div>`;
+  }).join('');
+
+  // ---- aria
+  if(a && a.current){
+    const q = a.current, aqi = Math.round(q.european_aqi ?? 0);
+    const scale = [[20,'#4ade80','Buona'],[40,'#a3e635','Discreta'],[60,'#facc15','Media'],[80,'#fb923c','Scarsa'],[100,'#f87171','Pessima'],[999,'#c084fc','Molto pessima']];
+    const band = scale.find(x=>aqi<=x[0]);
+    document.getElementById('aqiVal').textContent = aqi;
+    document.getElementById('gaugeArc').setAttribute('stroke', band[1]);
+    document.getElementById('gaugeArc').setAttribute('stroke-dashoffset', 352 - 352*Math.min(aqi,100)/100);
+    const pill = document.getElementById('aqPill');
+    pill.textContent = band[2]; pill.style.background = band[1]+'22'; pill.style.color = band[1];
+    const ph = a.hourly, hi = Math.min(new Date().getHours(), (ph?.alder_pollen?.length||1)-1);
+    const rows = [
+      ['PM2.5', q.pm2_5, 25, 'µg/m³'], ['PM10', q.pm10, 50, 'µg/m³'],
+      ['Ozono', q.ozone, 120, 'µg/m³'], ['NO₂', q.nitrogen_dioxide, 40, 'µg/m³'],
+      ['Polvere sahariana', q.dust, 50, 'µg/m³'],
+      ['Polline graminacee', ph?ph.grass_pollen[hi]:null, 50, 'gr/m³'],
+      ['Polline betulla', ph?ph.birch_pollen[hi]:null, 50, 'gr/m³']
+    ].filter(r=>r[1]!==null && r[1]!==undefined);
+    document.getElementById('aqBars').innerHTML = rows.map(([n,v,max,u])=>{
+      const p = Math.min(100, v/max*100), col = p<40?'#4ade80':p<75?'#facc15':'#f87171';
+      return `<div class="bar"><div class="t">${n}</div><div class="track"><div class="fill" style="width:${p}%;background:${col}"></div></div>
+      <div class="n">${v.toFixed(1)} <span style="color:var(--dim);font-size:10px">${u}</span></div></div>`;
+    }).join('');
+  }
+
+  // ---- sole
+  const sr = new Date(d.sunrise[0]), ss = new Date(d.sunset[0]);
+  document.getElementById('sunrise').textContent = sr.toLocaleTimeString('it-CH',{hour:'2-digit',minute:'2-digit'});
+  document.getElementById('sunset').textContent  = ss.toLocaleTimeString('it-CH',{hour:'2-digit',minute:'2-digit'});
+  const mins = (ss-sr)/60000;
+  document.getElementById('daylight').textContent = `${Math.floor(mins/60)} h ${Math.round(mins%60)} m`;
+  drawSun(sr,ss);
+
+  document.getElementById('stamp').textContent = "Ultimo aggiornamento: " + new Date().toLocaleTimeString('it-CH');
+}
+
+function drawSun(sr,ss){
+  const cv = document.getElementById('sunArc'), r = cv.getBoundingClientRect();
+  cv.width = r.width*2; cv.height = r.height*2;
+  const x = cv.getContext('2d'); x.scale(2,2);
+  const W = r.width, H = r.height;
+  x.clearRect(0,0,W,H);
+  x.beginPath();
+  for(let i=0;i<=100;i++){ const px=W*i/100, py=H-10-Math.sin(Math.PI*i/100)*(H-26); i?x.lineTo(px,py):x.moveTo(px,py); }
+  x.strokeStyle='rgba(255,255,255,.14)'; x.lineWidth=2; x.setLineDash([4,5]); x.stroke(); x.setLineDash([]);
+  const now = new Date(), p = Math.max(0, Math.min(1,(now-sr)/(ss-sr)));
+  const sx = W*p, sy = H-10-Math.sin(Math.PI*p)*(H-26);
+  x.beginPath(); x.moveTo(0,H-10); x.lineTo(W,H-10); x.strokeStyle='rgba(255,255,255,.2)'; x.lineWidth=1; x.stroke();
+  const g = x.createRadialGradient(sx,sy,0,sx,sy,16);
+  g.addColorStop(0,'rgba(255,200,100,.95)'); g.addColorStop(1,'rgba(255,180,95,0)');
+  x.fillStyle=g; x.beginPath(); x.arc(sx,sy,16,0,7); x.fill();
+  x.fillStyle = (p>0&&p<1)?'#ffd07a':'#5a6b83'; x.beginPath(); x.arc(sx,sy,5.5,0,7); x.fill();
+}
+
+document.getElementById('altSwitch').addEventListener('click', e=>{
+  const b = e.target.closest('button'); if(!b) return;
+  document.querySelectorAll('#altSwitch button').forEach(x=>x.classList.remove('on'));
+  b.classList.add('on'); idx = +b.dataset.i; load();
+});
+window.addEventListener('resize', ()=>{ const s=document.getElementById('sunrise').textContent; if(s!=='–') load(); });
+load(); setInterval(load, 15*60*1000);
+</script>
+</body>
+</html>
