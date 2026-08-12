@@ -4,11 +4,12 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Villars-sur-Ollon · Mountain Dashboard</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>&#127956;</text></svg>">
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
 <style>
   :root{
     --bg:#070d16; --bg2:#0d1727; --card:rgba(255,255,255,.045); --stroke:rgba(255,255,255,.10);
-    --txt:#eaf1fb; --dim:#8ea3bf; --accent:#5fd3ff; --warm:#ffb45f; --good:#4ade80; --bad:#f87171; --snow:#c9e6ff;
+    --txt:#eaf1fb; --dim:#8ea3bf; --accent:#5fd3ff; --warm:#ffb45f; --good:#4ade80; --bad:#f87171;
   }
   *{box-sizing:border-box;margin:0;padding:0}
   body{
@@ -21,23 +22,31 @@
     -webkit-font-smoothing:antialiased;
   }
   .wrap{max-width:1320px;margin:0 auto}
-  header{display:flex;flex-wrap:wrap;gap:18px;align-items:flex-end;justify-content:space-between;margin-bottom:24px}
+  header{display:flex;flex-wrap:wrap;gap:18px;align-items:flex-end;justify-content:space-between;margin-bottom:20px}
   h1{font-size:30px;font-weight:650;letter-spacing:-.5px}
   h1 span{color:var(--accent)}
   .sub{color:var(--dim);font-size:13.5px;margin-top:5px}
   .alt-switch{display:flex;gap:6px;background:rgba(255,255,255,.05);border:1px solid var(--stroke);padding:5px;border-radius:14px}
-  .alt-switch button{
-    background:none;border:0;color:var(--dim);font:inherit;font-size:13px;padding:9px 15px;border-radius:10px;cursor:pointer;
-    transition:.18s; line-height:1.25; text-align:center
-  }
+  .alt-switch button{background:none;border:0;color:var(--dim);font:inherit;font-size:13px;padding:9px 15px;border-radius:10px;
+    cursor:pointer;transition:.18s;line-height:1.25;text-align:center}
   .alt-switch button small{display:block;font-size:10.5px;opacity:.7}
   .alt-switch button.on{background:linear-gradient(135deg,#2a6fa8,#1d4d7c);color:#fff;box-shadow:0 4px 14px rgba(0,0,0,.35)}
   .grid{display:grid;gap:16px}
-  .card{
-    background:var(--card);border:1px solid var(--stroke);border-radius:20px;padding:20px 22px;
-    backdrop-filter:blur(12px); position:relative; overflow:hidden;
-  }
-  .card h2{font-size:11.5px;text-transform:uppercase;letter-spacing:1.4px;color:var(--dim);font-weight:600;margin-bottom:14px}
+  .card{background:var(--card);border:1px solid var(--stroke);border-radius:20px;padding:20px 22px;
+    backdrop-filter:blur(12px);position:relative;overflow:hidden}
+  .card h2{font-size:11.5px;text-transform:uppercase;letter-spacing:1.4px;color:var(--dim);font-weight:600;margin-bottom:14px;
+    display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+
+  #alerts{display:flex;flex-direction:column;gap:9px;margin-bottom:16px}
+  .alert{display:flex;gap:12px;align-items:flex-start;border-radius:14px;padding:12px 16px;font-size:13.5px;line-height:1.45;
+    border:1px solid;animation:slideIn .35s ease}
+  @keyframes slideIn{from{opacity:0;transform:translateY(-6px)}to{opacity:1;transform:none}}
+  .alert .ai{font-size:17px;line-height:1.2}
+  .alert b{font-weight:600}
+  .alert.danger{background:rgba(248,113,113,.12);border-color:rgba(248,113,113,.42);color:#ffd9d9}
+  .alert.warn{background:rgba(255,180,95,.12);border-color:rgba(255,180,95,.40);color:#ffe6c7}
+  .alert.info{background:rgba(95,211,255,.10);border-color:rgba(95,211,255,.35);color:#d5f0ff}
+
   .top{grid-template-columns:1.35fr 1fr 1fr}
   .hero{display:flex;flex-direction:column;justify-content:space-between;
     background:linear-gradient(135deg,rgba(95,211,255,.13),rgba(255,255,255,.04))}
@@ -65,6 +74,24 @@
   .compass .e{right:4px;top:50%;transform:translateY(-50%)} .compass .w{left:4px;top:50%;transform:translateY(-50%)}
   .compass .ctr{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center}
   .compass .ctr b{font-size:19px;font-weight:550} .compass .ctr i{font-style:normal;font-size:10px;color:var(--dim)}
+
+  .avarow{display:flex;gap:18px;align-items:center;flex-wrap:wrap}
+  .avabadge{width:96px;height:96px;border-radius:22px;display:flex;flex-direction:column;align-items:center;justify-content:center;
+    flex-shrink:0;font-weight:600;border:2px solid rgba(255,255,255,.16)}
+  .avabadge b{font-size:38px;line-height:1;font-weight:600}
+  .avabadge i{font-style:normal;font-size:9.5px;letter-spacing:1px;margin-top:4px;opacity:.85}
+  .avainfo{flex:1;min-width:200px;font-size:13px;line-height:1.55;color:var(--dim)}
+  .avainfo .lvl{font-size:17px;font-weight:600;color:var(--txt);margin-bottom:4px}
+  .probs{display:flex;flex-wrap:wrap;gap:6px;margin-top:9px}
+  .probs span{background:rgba(255,255,255,.07);border:1px solid var(--stroke);border-radius:20px;padding:3px 10px;font-size:11px;color:var(--txt)}
+
+  .imis .stats{grid-template-columns:repeat(4,1fr)}
+  .srcnote{font-size:10.5px;color:var(--dim);margin-top:11px;line-height:1.5}
+  .tag{display:inline-block;padding:2px 8px;border-radius:20px;font-size:10px;letter-spacing:.5px;
+    background:rgba(74,222,128,.14);color:var(--good);border:1px solid rgba(74,222,128,.3);text-transform:uppercase}
+  .tag.model{background:rgba(255,180,95,.13);color:var(--warm);border-color:rgba(255,180,95,.3)}
+  .tag.off{background:rgba(255,255,255,.07);color:var(--dim);border-color:var(--stroke)}
+
   .charts{grid-template-columns:1.6fr 1fr}
   .chartbox{height:250px;position:relative}
   .days{display:grid;grid-template-columns:repeat(7,1fr);gap:10px}
@@ -75,6 +102,27 @@
   .day .dt{font-size:14px;font-weight:550}
   .day .dt s{text-decoration:none;color:var(--dim);font-weight:400;margin-left:4px}
   .day .dp{font-size:10.5px;color:var(--accent);margin-top:5px;min-height:14px}
+
+  .cams{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}
+  .cam{position:relative;border-radius:14px;overflow:hidden;background:rgba(0,0,0,.35);aspect-ratio:4/3;display:block;
+    border:1px solid var(--stroke);transition:.2s}
+  .cam:hover{border-color:rgba(95,211,255,.45);transform:translateY(-2px)}
+  .cam img{width:100%;height:100%;object-fit:cover;display:block}
+  .cam .capt{position:absolute;left:0;right:0;bottom:0;padding:22px 12px 9px;font-size:12px;color:#fff;font-weight:500;
+    background:linear-gradient(transparent,rgba(0,0,0,.85));display:flex;justify-content:space-between;align-items:flex-end}
+  .cam .capt small{font-size:10px;opacity:.75;font-weight:400}
+  .cam .err{position:absolute;inset:0;display:none;align-items:center;justify-content:center;font-size:11.5px;color:var(--dim);text-align:center;padding:14px}
+
+  .trains{display:flex;flex-direction:column;gap:8px}
+  .tr{display:grid;grid-template-columns:52px 1fr auto;gap:12px;align-items:center;background:rgba(0,0,0,.2);
+    border-radius:12px;padding:11px 13px}
+  .tr .ln{background:#0b4a86;color:#fff;font-size:12px;font-weight:600;text-align:center;border-radius:7px;padding:4px 0}
+  .tr .dst{font-size:13.5px;font-weight:500}
+  .tr .dst small{display:block;color:var(--dim);font-size:10.5px;font-weight:400;margin-top:2px}
+  .tr .tm{text-align:right;font-size:16px;font-weight:550;font-variant-numeric:tabular-nums}
+  .tr .tm small{display:block;font-size:10.5px;color:var(--dim);font-weight:400}
+  .tr .tm .late{color:var(--bad)}
+
   .aqrow{display:flex;align-items:center;gap:20px;flex-wrap:wrap}
   .gauge{width:132px;height:132px;flex-shrink:0;position:relative}
   .gauge svg{transform:rotate(-90deg)}
@@ -85,7 +133,7 @@
   .bar .t{color:var(--dim)}
   .bar .track{height:7px;background:rgba(255,255,255,.08);border-radius:5px;overflow:hidden}
   .bar .fill{height:100%;border-radius:5px;transition:width .7s}
-  .bar .n{text-align:right;font-variant-numeric:tabular-nums;color:var(--txt)}
+  .bar .n{text-align:right;font-variant-numeric:tabular-nums}
   .links{display:grid;grid-template-columns:repeat(auto-fill,minmax(215px,1fr));gap:10px}
   .links a{display:flex;gap:11px;align-items:center;text-decoration:none;color:var(--txt);
     background:rgba(0,0,0,.2);border:1px solid transparent;border-radius:13px;padding:12px 14px;transition:.2s;font-size:13px}
@@ -96,11 +144,14 @@
   .sunbar .arc{position:absolute;inset:0}
   .suninfo{display:flex;justify-content:space-between;font-size:12px;color:var(--dim);margin-top:2px}
   .suninfo b{display:block;color:var(--txt);font-size:15px;font-weight:500}
-  footer{margin-top:26px;text-align:center;color:var(--dim);font-size:11.5px;line-height:1.8}
-  .pill{display:inline-block;padding:3px 10px;border-radius:20px;font-size:11px;margin-left:8px;vertical-align:middle}
-  .loading{opacity:.35;transition:opacity .3s}
-  @media(max-width:1050px){.top,.charts{grid-template-columns:1fr}.days{grid-template-columns:repeat(4,1fr)}}
-  @media(max-width:560px){.days{grid-template-columns:repeat(2,1fr)}.hero .deg{font-size:50px}body{padding:18px 12px 40px}}
+  footer{margin-top:26px;text-align:center;color:var(--dim);font-size:11.5px;line-height:1.85}
+  footer a{color:var(--dim)}
+  .pill{display:inline-block;padding:3px 10px;border-radius:20px;font-size:11px;vertical-align:middle}
+  .loading{opacity:.4;transition:opacity .3s}
+  @media(max-width:1050px){.top,.charts{grid-template-columns:1fr}.days{grid-template-columns:repeat(4,1fr)}
+    .cams{grid-template-columns:1fr 1fr}.imis .stats{grid-template-columns:1fr 1fr}}
+  @media(max-width:560px){.days{grid-template-columns:repeat(2,1fr)}.hero .deg{font-size:50px}
+    body{padding:18px 12px 40px}.cams{grid-template-columns:1fr}}
 </style>
 </head>
 <body>
@@ -117,6 +168,8 @@
       <button data-i="2">Chamossaire<small>2 120 m</small></button>
     </div>
   </header>
+
+  <div id="alerts"></div>
 
   <div class="grid top" style="margin-bottom:16px">
     <div class="card hero">
@@ -165,6 +218,38 @@
     </div>
   </div>
 
+  <div class="grid" style="grid-template-columns:1fr 1fr;margin-bottom:16px">
+    <div class="card">
+      <h2>Pericolo valanghe · SLF <span class="tag off" id="avaTag">…</span></h2>
+      <div class="avarow">
+        <div class="avabadge" id="avaBadge" style="background:rgba(255,255,255,.06);color:var(--dim)">
+          <b id="avaNum">–</b><i>LIVELLO</i>
+        </div>
+        <div class="avainfo">
+          <div class="lvl" id="avaLvl">Caricamento…</div>
+          <div id="avaTxt">Bollettino SLF per le Alpi vodesi.</div>
+          <div class="probs" id="avaProbs"></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card imis">
+      <h2>Stazione nivologica Col de Bretaye · 1 780 m <span class="tag" id="imisTag">…</span></h2>
+      <div class="stats">
+        <div class="stat"><div class="k">Neve misurata</div><div class="v" id="imisHS">–<em>cm</em></div></div>
+        <div class="stat"><div class="k">Neve fresca 24h</div><div class="v" id="imisHN">–<em>cm</em></div></div>
+        <div class="stat"><div class="k">Temperatura</div><div class="v" id="imisTA">–<em>°C</em></div></div>
+        <div class="stat"><div class="k">Raffica max</div><div class="v" id="imisVW">–<em>km/h</em></div></div>
+      </div>
+      <div class="srcnote" id="imisNote">Stazione automatica IMIS · SLF/WSL — misura reale al suolo, a 3 km dal villaggio.</div>
+    </div>
+  </div>
+
+  <div class="card" style="margin-bottom:16px">
+    <h2>Webcam in diretta <span class="tag off">aggiornamento ogni 5 min</span></h2>
+    <div class="cams" id="cams"></div>
+  </div>
+
   <div class="grid charts" style="margin-bottom:16px">
     <div class="card">
       <h2>Temperatura e precipitazioni · 48 h</h2>
@@ -181,7 +266,7 @@
     <div class="days" id="days"></div>
   </div>
 
-  <div class="grid" style="grid-template-columns:1.25fr 1fr;margin-bottom:16px" id="bottomGrid">
+  <div class="grid" style="grid-template-columns:1.25fr 1fr;margin-bottom:16px">
     <div class="card">
       <h2>Qualità dell'aria e pollini <span class="pill" id="aqPill"></span></h2>
       <div class="aqrow">
@@ -207,75 +292,139 @@
     </div>
   </div>
 
-  <div class="card">
-    <h2>Collegamenti utili in valle</h2>
-    <div class="links">
-      <a href="https://www.slf.ch/it/bollettino-valanghe-e-situazione-nivologica/" target="_blank"><span class="ei">⚠️</span><div>Bollettino valanghe SLF<small>Pericolo per le Alpi vodesi</small></div></a>
-      <a href="https://www.slf.ch/it/mappe-neve/" target="_blank"><span class="ei">❄️</span><div>Mappe neve SLF<small>Altezza neve stazioni IMIS</small></div></a>
-      <a href="https://www.meteoswiss.admin.ch/local-forecast/villars-sur-ollon/1884" target="_blank"><span class="ei">🇨🇭</span><div>MeteoSvizzera<small>Previsione locale + allerte</small></div></a>
-      <a href="https://www.villars-diablerets.ch/en/webcams" target="_blank"><span class="ei">📷</span><div>Webcam Villars<small>Bretaye, Chamossaire, villaggio</small></div></a>
-      <a href="https://www.villars-diablerets.ch/en/winter/slopes-and-lifts" target="_blank"><span class="ei">🚡</span><div>Stato impianti<small>Piste e risalite aperte</small></div></a>
-      <a href="https://www.tpc.ch/" target="_blank"><span class="ei">🚂</span><div>TPC Bex–Villars–Bretaye<small>Orari e perturbazioni</small></div></a>
-      <a href="https://map.geo.admin.ch/#/map?center=2570000,1130000&z=6" target="_blank"><span class="ei">🗺️</span><div>Swisstopo<small>Mappe, sentieri, pendenze</small></div></a>
-      <a href="https://www.hydrodaten.admin.ch/it" target="_blank"><span class="ei">🌊</span><div>Idrologia Rodano<small>Portata e temperatura fiumi</small></div></a>
+  <div class="grid" style="grid-template-columns:1fr 1.4fr;margin-bottom:16px">
+    <div class="card">
+      <h2>Prossimi treni da Villars <span class="tag off">TPC</span></h2>
+      <div class="trains" id="trains"><div class="srcnote">Caricamento orari…</div></div>
+    </div>
+    <div class="card">
+      <h2>Collegamenti utili in valle</h2>
+      <div class="links">
+        <a href="https://www.slf.ch/it/bollettino-valanghe-e-situazione-nivologica/" target="_blank" rel="noopener"><span class="ei">&#9888;&#65039;</span><div>Bollettino valanghe SLF<small>Testo completo e mappa</small></div></a>
+        <a href="https://whiterisk.ch/it/conditions/danger" target="_blank" rel="noopener"><span class="ei">&#128506;&#65039;</span><div>White Risk · pericolo<small>Carta interattiva SLF</small></div></a>
+        <a href="https://www.slf.ch/it/bollettino-valanghe-e-situazione-nivologica/carte-della-neve" target="_blank" rel="noopener"><span class="ei">&#10052;&#65039;</span><div>Carte della neve SLF<small>Neve fresca e altezza al suolo</small></div></a>
+        <a href="https://www.slf.ch/it/bollettino-valanghe-e-situazione-nivologica/valori-di-misura" target="_blank" rel="noopener"><span class="ei">&#128202;</span><div>Valori di misura SLF<small>Tutte le stazioni IMIS</small></div></a>
+        <a href="https://www.meteoswiss.admin.ch/local-forecasts/villars-sur-ollon/1884.html" target="_blank" rel="noopener"><span class="ei">&#127464;&#127469;</span><div>MeteoSvizzera · Villars<small>Previsione locale e allerte</small></div></a>
+        <a href="https://www.tvgd.ch/live" target="_blank" rel="noopener"><span class="ei">&#128737;</span><div>Stato impianti e piste<small>TVGD in tempo reale</small></div></a>
+        <a href="https://www.tvgd.ch/webcams" target="_blank" rel="noopener"><span class="ei">&#128247;</span><div>Tutte le webcam TVGD<small>8 camere panoramiche</small></div></a>
+        <a href="https://tpc.ch/" target="_blank" rel="noopener"><span class="ei">&#128642;</span><div>TPC Bex–Villars–Bretaye<small>Orari e perturbazioni</small></div></a>
+        <a href="https://map.geo.admin.ch/" target="_blank" rel="noopener"><span class="ei">&#129517;</span><div>Swisstopo<small>Sentieri, pendenze, mappe</small></div></a>
+        <a href="https://www.hydrodaten.admin.ch/it" target="_blank" rel="noopener"><span class="ei">&#127754;</span><div>Idrologia Rodano<small>Portata e temperatura fiumi</small></div></a>
+      </div>
     </div>
   </div>
 
   <footer>
-    Dati: <a href="https://open-meteo.com" style="color:var(--dim)">Open-Meteo</a> (CC BY 4.0) · modelli ICON-CH / MeteoSvizzera · aggiornamento automatico ogni 15 min.<br>
-    <span id="stamp">—</span>
+    Meteo e aria: <a href="https://open-meteo.com" target="_blank" rel="noopener">Open-Meteo</a> (CC BY 4.0, modelli ICON-CH) ·
+    Valanghe e neve: <a href="https://www.slf.ch" target="_blank" rel="noopener">SLF/WSL</a> ·
+    Orari: <a href="https://search.ch" target="_blank" rel="noopener">search.ch</a> · Webcam: bergfex / Roundshot<br>
+    <span id="stamp">—</span> · aggiornamento automatico ogni 15 minuti
   </footer>
 </div>
 
 <script>
+/* ============================================================
+   CONFIGURAZIONE — modifica qui le soglie degli avvisi
+   ============================================================ */
+const CFG = {
+  gustWarn:      50,    // km/h -> avviso vento
+  gustDanger:    75,    // km/h -> avviso forte
+  freezingLow:   1300,  // m    -> isoterma zero bassa (neve in paese)
+  snowIncoming:  5,     // cm   -> nevicata attesa nelle prossime 72 h
+  aqiWarn:       60,    // indice europeo
+  avalancheWarn: 3,     // livello >= 3 -> avviso
+  refreshMin:    15
+};
+
 const SPOTS = [
   {name:"Villars-sur-Ollon (villaggio)", lat:46.2986, lon:7.0553, elev:1258},
   {name:"Bretaye (comprensorio)",        lat:46.3168, lon:7.0669, elev:1829},
   {name:"Grand Chamossaire (cima)",      lat:46.3267, lon:7.0613, elev:2120}
 ];
-let idx = 0, tempChart, windChart;
+const VILLARS = {lat:46.2986, lon:7.0553};
+const IMIS_STATION = "CHA3";   // Col de Bretaye, 1780 m
+
+const CAMS = [
+  {n:"Bretaye",           d:"1 805 m · col e trenino", u:"https://images.bergfex.at/webcams/?id=7381&2",
+   link:"https://tvgd.roundshot.com/bretaye/"},
+  {n:"Petit Chamossaire", d:"comprensorio",             u:"https://images.bergfex.at/webcams/?id=7382&2",
+   link:"https://tvgd.roundshot.com/pt-chamossaire/"},
+  {n:"Villars",           d:"vista sul villaggio",      u:"https://webcams.meteonews.net/webcams/standard/640x480/16803.jpg",
+   link:"https://www.tvgd.ch/webcams"}
+];
+
+let idx = 0, tempChart, windChart, ALERTS = [];
 
 const WMO = {
- 0:["Sereno","☀️"],1:["Prevalentemente sereno","🌤️"],2:["Parzialmente nuvoloso","⛅"],3:["Coperto","☁️"],
- 45:["Nebbia","🌫️"],48:["Nebbia gelata","🌫️"],51:["Pioviggine debole","🌦️"],53:["Pioviggine","🌦️"],55:["Pioviggine intensa","🌦️"],
- 56:["Pioviggine gelata","🌧️"],57:["Pioviggine gelata","🌧️"],61:["Pioggia debole","🌦️"],63:["Pioggia","🌧️"],65:["Pioggia forte","🌧️"],
- 66:["Pioggia gelata","🌧️"],67:["Pioggia gelata","🌧️"],71:["Neve debole","🌨️"],73:["Neve","🌨️"],75:["Neve forte","❄️"],
- 77:["Granuli di neve","🌨️"],80:["Rovesci deboli","🌦️"],81:["Rovesci","🌧️"],82:["Rovesci violenti","⛈️"],
- 85:["Rovesci di neve","🌨️"],86:["Rovesci di neve forti","❄️"],95:["Temporale","⛈️"],96:["Temporale con grandine","⛈️"],99:["Temporale forte","⛈️"]
+ 0:["Sereno","\u2600\uFE0F"],1:["Prevalentemente sereno","\uD83C\uDF24\uFE0F"],2:["Parzialmente nuvoloso","\u26C5"],3:["Coperto","\u2601\uFE0F"],
+ 45:["Nebbia","\uD83C\uDF2B\uFE0F"],48:["Nebbia gelata","\uD83C\uDF2B\uFE0F"],51:["Pioviggine debole","\uD83C\uDF26\uFE0F"],53:["Pioviggine","\uD83C\uDF26\uFE0F"],55:["Pioviggine intensa","\uD83C\uDF26\uFE0F"],
+ 56:["Pioviggine gelata","\uD83C\uDF27\uFE0F"],57:["Pioviggine gelata","\uD83C\uDF27\uFE0F"],61:["Pioggia debole","\uD83C\uDF26\uFE0F"],63:["Pioggia","\uD83C\uDF27\uFE0F"],65:["Pioggia forte","\uD83C\uDF27\uFE0F"],
+ 66:["Pioggia gelata","\uD83C\uDF27\uFE0F"],67:["Pioggia gelata","\uD83C\uDF27\uFE0F"],71:["Neve debole","\uD83C\uDF28\uFE0F"],73:["Neve","\uD83C\uDF28\uFE0F"],75:["Neve forte","\u2744\uFE0F"],
+ 77:["Granuli di neve","\uD83C\uDF28\uFE0F"],80:["Rovesci deboli","\uD83C\uDF26\uFE0F"],81:["Rovesci","\uD83C\uDF27\uFE0F"],82:["Rovesci violenti","\u26C8\uFE0F"],
+ 85:["Rovesci di neve","\uD83C\uDF28\uFE0F"],86:["Rovesci di neve forti","\u2744\uFE0F"],95:["Temporale","\u26C8\uFE0F"],96:["Temporale con grandine","\u26C8\uFE0F"],99:["Temporale forte","\u26C8\uFE0F"]
 };
-const wmo = c => WMO[c] || ["—","·"];
+const wmo = c => WMO[c] || ["\u2014","\u00b7"];
 const dirName = d => ["N","NNE","NE","ENE","E","ESE","SE","SSE","S","SSO","SO","OSO","O","ONO","NO","NNO"][Math.round(d/22.5)%16];
 
-async function load(){
+/* ---------- fetch con fallback su relay CORS ---------- */
+async function fetchJSON(url, useProxy){
+  const tries = [url];
+  if(useProxy){
+    const q = encodeURIComponent(url);
+    tries.push("https://api.cors.lol/?url=" + q);
+    tries.push("https://api.allorigins.win/raw?url=" + q);
+    tries.push("https://api.codetabs.com/v1/proxy?quest=" + q);
+  }
+  for(const t of tries){
+    const ctrl = new AbortController();
+    const timer = setTimeout(()=>ctrl.abort(), 9000);
+    try{
+      const r = await fetch(t, {cache:"no-store", signal:ctrl.signal});
+      clearTimeout(timer);
+      if(!r.ok) continue;
+      return await r.json();
+    }catch(e){ clearTimeout(timer); }
+  }
+  throw new Error("unreachable");
+}
+
+/* ---------- AVVISI ---------- */
+function pushAlert(type, icon, title, text){ ALERTS.push({type, icon, title, text}); }
+function renderAlerts(){
+  const order = {danger:0, warn:1, info:2};
+  ALERTS.sort((a,b)=>order[a.type]-order[b.type]);
+  document.getElementById('alerts').innerHTML = ALERTS.map(a =>
+    `<div class="alert ${a.type}"><div class="ai">${a.icon}</div><div><b>${a.title}</b> &mdash; ${a.text}</div></div>`
+  ).join('');
+}
+
+/* ============================================================
+   1) METEO + ARIA (Open-Meteo)
+   ============================================================ */
+async function loadWeather(){
   const s = SPOTS[idx];
-  document.querySelectorAll('.card').forEach(c=>c.classList.add('loading'));
   const fUrl = `https://api.open-meteo.com/v1/forecast?latitude=${s.lat}&longitude=${s.lon}&elevation=${s.elev}`
     + `&current=temperature_2m,apparent_temperature,relative_humidity_2m,is_day,precipitation,snowfall,weather_code,cloud_cover,pressure_msl,wind_speed_10m,wind_direction_10m,wind_gusts_10m`
     + `&hourly=temperature_2m,snowfall,snow_depth,precipitation,precipitation_probability,wind_speed_10m,wind_gusts_10m,freezing_level_height,visibility`
     + `&daily=weather_code,temperature_2m_max,temperature_2m_min,sunrise,sunset,uv_index_max,precipitation_sum,snowfall_sum,precipitation_probability_max,wind_gusts_10m_max`
     + `&timezone=Europe%2FZurich&forecast_days=7`;
   const aUrl = `https://air-quality-api.open-meteo.com/v1/air-quality?latitude=${s.lat}&longitude=${s.lon}`
-    + `&current=european_aqi,pm10,pm2_5,ozone,nitrogen_dioxide,sulphur_dioxide,dust`
+    + `&current=european_aqi,pm10,pm2_5,ozone,nitrogen_dioxide,dust`
     + `&hourly=alder_pollen,birch_pollen,grass_pollen&timezone=Europe%2FZurich&forecast_days=1`;
 
-  try{
-    const [f,a] = await Promise.all([fetch(fUrl).then(r=>r.json()), fetch(aUrl).then(r=>r.json()).catch(()=>null)]);
-    render(f,a,s);
-  }catch(e){
-    document.getElementById('subtitle').textContent = "Impossibile contattare il servizio meteo — controlla la connessione.";
-  }
-  document.querySelectorAll('.card').forEach(c=>c.classList.remove('loading'));
+  const [f, a] = await Promise.all([ fetchJSON(fUrl), fetchJSON(aUrl).catch(()=>null) ]);
+  renderWeather(f, a, s);
 }
 
-function render(f,a,s){
+function renderWeather(f, a, s){
   const c = f.current, h = f.hourly, d = f.daily;
-  const [cond,ico] = wmo(c.weather_code);
+  const [cond, ico] = wmo(c.weather_code);
   document.getElementById('subtitle').textContent =
     `${s.name} · ${Math.round(f.elevation)} m s.l.m. · dati modello ${new Date(c.time).toLocaleString('it-CH',{weekday:'short',hour:'2-digit',minute:'2-digit'})}`;
   document.getElementById('curIcon').textContent = ico;
-  document.getElementById('curTemp').textContent = Math.round(c.temperature_2m) + "°";
+  document.getElementById('curTemp').textContent = Math.round(c.temperature_2m) + "\u00b0";
   document.getElementById('curCond').textContent = cond;
-  document.getElementById('curFeels').textContent = `Percepita ${Math.round(c.apparent_temperature)}° · precipitazione ${c.precipitation.toFixed(1)} mm/h`;
+  document.getElementById('curFeels').textContent = `Percepita ${Math.round(c.apparent_temperature)}\u00b0 · precipitazione ${c.precipitation.toFixed(1)} mm/h`;
   document.getElementById('curHum').textContent = c.relative_humidity_2m + " %";
   document.getElementById('curPres').textContent = Math.round(c.pressure_msl) + " hPa";
   document.getElementById('curCloud').textContent = c.cloud_cover + " %";
@@ -286,37 +435,48 @@ function render(f,a,s){
   document.getElementById('windGust').innerHTML = Math.round(c.wind_gusts_10m) + '<em>km/h</em>';
   document.getElementById('windMax').innerHTML = Math.round(d.wind_gusts_10m_max[0]) + '<em>km/h</em>';
 
-  // indice ora corrente
   const now = new Date(); let i0 = h.time.findIndex(t => new Date(t) > now) - 1; if(i0 < 0) i0 = 0;
   const depth = (h.snow_depth[i0] ?? 0) * 100;
   const s24 = h.snowfall.slice(Math.max(0,i0-24), i0).reduce((x,y)=>x+(y||0),0);
-  const s72 = (d.snowfall_sum.slice(0,3)).reduce((x,y)=>x+(y||0),0);
-  document.getElementById('frzLvl').innerHTML = Math.round(h.freezing_level_height[i0]) + '<em>m</em>';
+  const s72 = d.snowfall_sum.slice(0,3).reduce((x,y)=>x+(y||0),0);
+  const frz  = Math.round(h.freezing_level_height[i0]);
+  document.getElementById('frzLvl').innerHTML = frz + '<em>m</em>';
   document.getElementById('snowDepth').innerHTML = depth.toFixed(0) + '<em>cm</em>';
   document.getElementById('snow24').innerHTML = s24.toFixed(1) + '<em>cm</em>';
   document.getElementById('snow72').innerHTML = s72.toFixed(1) + '<em>cm</em>';
   document.getElementById('visib').innerHTML = ((h.visibility[i0]||0)/1000).toFixed(1) + '<em>km</em>';
   document.getElementById('uvMax').textContent = (d.uv_index_max[0] ?? 0).toFixed(1);
 
-  // ---- grafici 48h
-  const sl = (arr)=>arr.slice(i0, i0+48);
-  const labels = sl(h.time).map(t=>{const x=new Date(t);return x.getHours()===0? x.toLocaleDateString('it-CH',{weekday:'short'}) : (x.getHours()+"h");});
+  const gustMax = Math.round(d.wind_gusts_10m_max[0]);
+  if(gustMax >= CFG.gustDanger)
+    pushAlert('danger','\uD83D\uDCA8','Vento forte',`raffiche fino a <b>${gustMax} km/h</b> oggi a ${s.name.split(' (')[0]}. Impianti a rischio chiusura, attenzione agli alberi.`);
+  else if(gustMax >= CFG.gustWarn)
+    pushAlert('warn','\uD83D\uDCA8','Vento sostenuto',`raffiche fino a <b>${gustMax} km/h</b> oggi.`);
+  if(frz <= CFG.freezingLow)
+    pushAlert('info','\uD83C\uDF21\uFE0F','Isoterma zero bassa',`quota <b>${frz} m</b>: possibile neve fino in paese (1 258 m).`);
+  if(s72 >= CFG.snowIncoming)
+    pushAlert('info','\u2744\uFE0F','Nevicata in arrivo',`circa <b>${s72.toFixed(0)} cm</b> attesi nei prossimi 3 giorni a ${Math.round(f.elevation)} m.`);
+  if(d.temperature_2m_min[0] <= -12)
+    pushAlert('warn','\uD83E\uDD76','Freddo intenso',`minima prevista <b>${Math.round(d.temperature_2m_min[0])}\u00b0C</b>. Occhio alle tubature del chalet.`);
+
+  const sl = arr => arr.slice(i0, i0+48);
+  const labels = sl(h.time).map(t => { const x = new Date(t);
+    return x.getHours()===0 ? x.toLocaleDateString('it-CH',{weekday:'short'}) : (x.getHours()+"h"); });
   const grid = {color:'rgba(255,255,255,.06)'}, tick = {color:'#8ea3bf',font:{size:10},maxRotation:0,autoSkip:true,maxTicksLimit:9};
   Chart.defaults.font.family = getComputedStyle(document.body).fontFamily;
 
-  const temps = sl(h.temperature_2m), precip = sl(h.precipitation), snows = sl(h.snowfall);
   if(tempChart) tempChart.destroy();
   tempChart = new Chart(document.getElementById('tempChart'),{
     data:{labels, datasets:[
-      {type:'line',label:'Temperatura °C',data:temps,borderColor:'#ffb45f',backgroundColor:'rgba(255,180,95,.14)',
+      {type:'line',label:'Temperatura \u00b0C',data:sl(h.temperature_2m),borderColor:'#ffb45f',backgroundColor:'rgba(255,180,95,.14)',
        borderWidth:2,fill:true,tension:.35,pointRadius:0,yAxisID:'y'},
-      {type:'bar',label:'Pioggia mm',data:precip,backgroundColor:'rgba(95,211,255,.55)',yAxisID:'y1',borderRadius:3},
-      {type:'bar',label:'Neve cm',data:snows,backgroundColor:'rgba(201,230,255,.9)',yAxisID:'y1',borderRadius:3}
+      {type:'bar',label:'Pioggia mm',data:sl(h.precipitation),backgroundColor:'rgba(95,211,255,.55)',yAxisID:'y1',borderRadius:3},
+      {type:'bar',label:'Neve cm',data:sl(h.snowfall),backgroundColor:'rgba(201,230,255,.9)',yAxisID:'y1',borderRadius:3}
     ]},
     options:{responsive:true,maintainAspectRatio:false,interaction:{mode:'index',intersect:false},
       plugins:{legend:{labels:{color:'#8ea3bf',boxWidth:10,font:{size:11}}}},
       scales:{x:{grid,ticks:tick},
-        y:{position:'left',grid,ticks:{color:'#8ea3bf',font:{size:10},callback:v=>v+'°'}},
+        y:{position:'left',grid,ticks:{color:'#8ea3bf',font:{size:10},callback:v=>v+'\u00b0'}},
         y1:{position:'right',grid:{display:false},ticks:{color:'#8ea3bf',font:{size:10}},beginAtZero:true,suggestedMax:3}}}
   });
 
@@ -334,20 +494,17 @@ function render(f,a,s){
       scales:{x:{grid,ticks:tick},y:{grid,beginAtZero:true,ticks:{color:'#8ea3bf',font:{size:10},callback:v=>v+' km/h'}}}}
   });
 
-  // ---- 7 giorni
   document.getElementById('days').innerHTML = d.time.map((t,i)=>{
-    const [cn,ic] = wmo(d.weather_code[i]);
-    const dt = new Date(t);
-    const extra = d.snowfall_sum[i] > 0.2 ? `❄ ${d.snowfall_sum[i].toFixed(0)} cm`
-                : d.precipitation_sum[i] > 0.2 ? `💧 ${d.precipitation_sum[i].toFixed(1)} mm · ${d.precipitation_probability_max[i]??0}%` : '';
+    const [cn,ic] = wmo(d.weather_code[i]); const dt = new Date(t);
+    const extra = d.snowfall_sum[i] > 0.2 ? `\u2744 ${d.snowfall_sum[i].toFixed(0)} cm`
+                : d.precipitation_sum[i] > 0.2 ? `\uD83D\uDCA7 ${d.precipitation_sum[i].toFixed(1)} mm · ${d.precipitation_probability_max[i]??0}%` : '';
     return `<div class="day" title="${cn} · raffiche max ${Math.round(d.wind_gusts_10m_max[i])} km/h">
       <div class="dn">${i===0?'Oggi':dt.toLocaleDateString('it-CH',{weekday:'short'})} ${dt.getDate()}</div>
       <div class="di">${ic}</div>
-      <div class="dt">${Math.round(d.temperature_2m_max[i])}°<s>${Math.round(d.temperature_2m_min[i])}°</s></div>
+      <div class="dt">${Math.round(d.temperature_2m_max[i])}\u00b0<s>${Math.round(d.temperature_2m_min[i])}\u00b0</s></div>
       <div class="dp">${extra}</div></div>`;
   }).join('');
 
-  // ---- aria
   if(a && a.current){
     const q = a.current, aqi = Math.round(q.european_aqi ?? 0);
     const scale = [[20,'#4ade80','Buona'],[40,'#a3e635','Discreta'],[60,'#facc15','Media'],[80,'#fb923c','Scarsa'],[100,'#f87171','Pessima'],[999,'#c084fc','Molto pessima']];
@@ -357,13 +514,14 @@ function render(f,a,s){
     document.getElementById('gaugeArc').setAttribute('stroke-dashoffset', 352 - 352*Math.min(aqi,100)/100);
     const pill = document.getElementById('aqPill');
     pill.textContent = band[2]; pill.style.background = band[1]+'22'; pill.style.color = band[1];
+    if(aqi >= CFG.aqiWarn) pushAlert('warn','\uD83D\uDE37','Qualit\u00e0 dell\'aria ridotta',`indice europeo <b>${aqi}</b> (${band[2].toLowerCase()}).`);
     const ph = a.hourly, hi = Math.min(new Date().getHours(), (ph?.alder_pollen?.length||1)-1);
     const rows = [
-      ['PM2.5', q.pm2_5, 25, 'µg/m³'], ['PM10', q.pm10, 50, 'µg/m³'],
-      ['Ozono', q.ozone, 120, 'µg/m³'], ['NO₂', q.nitrogen_dioxide, 40, 'µg/m³'],
-      ['Polvere sahariana', q.dust, 50, 'µg/m³'],
-      ['Polline graminacee', ph?ph.grass_pollen[hi]:null, 50, 'gr/m³'],
-      ['Polline betulla', ph?ph.birch_pollen[hi]:null, 50, 'gr/m³']
+      ['PM2.5', q.pm2_5, 25, '\u00b5g/m\u00b3'], ['PM10', q.pm10, 50, '\u00b5g/m\u00b3'],
+      ['Ozono', q.ozone, 120, '\u00b5g/m\u00b3'], ['NO\u2082', q.nitrogen_dioxide, 40, '\u00b5g/m\u00b3'],
+      ['Polvere sahariana', q.dust, 50, '\u00b5g/m\u00b3'],
+      ['Polline graminacee', ph?ph.grass_pollen[hi]:null, 50, 'gr/m\u00b3'],
+      ['Polline betulla', ph?ph.birch_pollen[hi]:null, 50, 'gr/m\u00b3']
     ].filter(r=>r[1]!==null && r[1]!==undefined);
     document.getElementById('aqBars').innerHTML = rows.map(([n,v,max,u])=>{
       const p = Math.min(100, v/max*100), col = p<40?'#4ade80':p<75?'#facc15':'#f87171';
@@ -372,18 +530,226 @@ function render(f,a,s){
     }).join('');
   }
 
-  // ---- sole
   const sr = new Date(d.sunrise[0]), ss = new Date(d.sunset[0]);
   document.getElementById('sunrise').textContent = sr.toLocaleTimeString('it-CH',{hour:'2-digit',minute:'2-digit'});
   document.getElementById('sunset').textContent  = ss.toLocaleTimeString('it-CH',{hour:'2-digit',minute:'2-digit'});
   const mins = (ss-sr)/60000;
   document.getElementById('daylight').textContent = `${Math.floor(mins/60)} h ${Math.round(mins%60)} m`;
-  drawSun(sr,ss);
-
-  document.getElementById('stamp').textContent = "Ultimo aggiornamento: " + new Date().toLocaleTimeString('it-CH');
+  drawSun(sr, ss);
 }
 
-function drawSun(sr,ss){
+/* ============================================================
+   2) PERICOLO VALANGHE — bollettino SLF (CAAML v6 / EAWS)
+   ============================================================ */
+const DANGER = {
+  1:['Debole','#c8e35a','#2b3a12'], 2:['Moderato','#ffe14f','#3a3410'],
+  3:['Marcato','#ff9d3c','#3d2410'], 4:['Forte','#f2544a','#3d1512'],
+  5:['Molto forte','#b8231c','#2e0b09']
+};
+const LEVELMAP = {low:1, moderate:2, considerable:3, high:4, very_high:5};
+const PROBLEMS = {
+  new_snow:'Neve fresca', wind_slab:'Neve ventata', persistent_weak_layers:'Strati deboli persistenti',
+  wet_snow:'Neve bagnata', gliding_snow:'Slittamenti di neve', favourable_situation:'Situazione favorevole',
+  cornices:'Cornici', no_distinct_avalanche_problem:'Nessun problema marcato'
+};
+
+function pointInPoly(pt, poly){
+  let inside = false;
+  for(let i=0, j=poly.length-1; i<poly.length; j=i++){
+    const xi = poly[i][0], yi = poly[i][1], xj = poly[j][0], yj = poly[j][1];
+    if(((yi>pt[1]) !== (yj>pt[1])) && (pt[0] < (xj-xi)*(pt[1]-yi)/(yj-yi)+xi)) inside = !inside;
+  }
+  return inside;
+}
+function featureContains(feat, pt){
+  const g = feat.geometry; if(!g) return false;
+  const polys = g.type === 'Polygon' ? [g.coordinates] : (g.type === 'MultiPolygon' ? g.coordinates : []);
+  return polys.some(p => pointInPoly(pt, p[0]));
+}
+function deepFind(obj, re){
+  let out = [];
+  (function walk(o){
+    if(!o || typeof o !== 'object') return;
+    for(const k in o){
+      if(re.test(k)) out.push(o[k]);
+      if(typeof o[k] === 'object') walk(o[k]);
+    }
+  })(obj);
+  return out;
+}
+function levelOf(feat){
+  const vals = deepFind(feat.properties || {}, /(danger.*(rating|level)|mainValue|^level$)/i).flat();
+  for(const v of vals){
+    if(typeof v === 'number' && v >= 1 && v <= 5) return v;
+    if(typeof v === 'string'){
+      const k = v.toLowerCase().replace(/[\s-]/g,'_');
+      if(LEVELMAP[k]) return LEVELMAP[k];
+      const n = parseInt(v,10); if(n >= 1 && n <= 5) return n;
+    }
+  }
+  return 0;
+}
+
+async function loadAvalanche(){
+  const tag = document.getElementById('avaTag');
+  try{
+    const gj = await fetchJSON("https://aws.slf.ch/api/bulletin/caaml/it/geojson");
+    const feats = gj.features || [];
+
+    if(feats.length === 0){
+      tag.textContent = 'fuori stagione'; tag.className = 'tag off';
+      document.getElementById('avaLvl').textContent = 'Nessun bollettino attivo';
+      document.getElementById('avaTxt').innerHTML =
+        'Lo SLF pubblica il bollettino valanghe da inizio inverno a primavera (e per grandi nevicate estive). Tornerà automaticamente qui.';
+      document.getElementById('avaNum').textContent = '\u2013';
+      return;
+    }
+
+    const pt = [VILLARS.lon, VILLARS.lat];
+    let feat = feats.find(f => featureContains(f, pt));
+    const local = !!feat;
+    if(!feat) feat = feats.reduce((a,b)=> (levelOf(b) > levelOf(a) ? b : a), feats[0]);
+
+    const lvl = levelOf(feat);
+    const p = feat.properties || {};
+    const [name, col, dark] = DANGER[lvl] || ['Non disponibile','#8ea3bf','#1b2431'];
+
+    const badge = document.getElementById('avaBadge');
+    badge.style.background = col; badge.style.color = dark;
+    document.getElementById('avaNum').textContent = lvl || '\u2013';
+    document.getElementById('avaLvl').textContent = `${lvl || '?'} \u2013 ${name}`;
+    tag.textContent = local ? 'zona di Villars' : 'zona non identificata';
+    tag.className = 'tag' + (local ? '' : ' model');
+
+    const region = (deepFind(p, /^(region|regionName|bulletinID|id)$/i)[0]) || 'Alpi vodesi';
+    const valid  = deepFind(p, /(endTime|validUntil|end_date)/i)[0];
+    document.getElementById('avaTxt').innerHTML =
+      `Regione <b>${region}</b>${valid ? ' · valido fino al ' + new Date(valid).toLocaleString('it-CH',{day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'}) : ''}.
+       Consulta sempre il bollettino completo prima di uscire dalle piste.`;
+
+    const probs = deepFind(p, /problemType/i).flat().filter(Boolean);
+    document.getElementById('avaProbs').innerHTML =
+      [...new Set(probs)].map(x => `<span>${PROBLEMS[x] || x}</span>`).join('');
+
+    if(lvl >= CFG.avalancheWarn)
+      pushAlert(lvl >= 4 ? 'danger' : 'warn','\u26A0\uFE0F',`Pericolo valanghe ${lvl}/5 (${name.toLowerCase()})`,
+        'condizioni impegnative fuoripista. Leggi il bollettino SLF completo prima di muoverti.');
+    renderAlerts();
+  }catch(e){
+    tag.textContent = 'non raggiungibile'; tag.className = 'tag model';
+    document.getElementById('avaLvl').textContent = 'Dato non disponibile';
+    document.getElementById('avaTxt').innerHTML = 'Apri il <a href="https://www.slf.ch/it/bollettino-valanghe-e-situazione-nivologica/" target="_blank" rel="noopener" style="color:var(--accent)">bollettino SLF</a> direttamente.';
+  }
+}
+
+/* ============================================================
+   3) STAZIONE NIVOLOGICA IMIS — Col de Bretaye (SLF)
+   ============================================================ */
+async function loadIMIS(){
+  const tag = document.getElementById('imisTag');
+  const paint = (hs, hn, ta, gust, when, cached) => {
+    document.getElementById('imisHS').innerHTML = (hs==null) ? '\u2013<em>cm</em>' : (hs*100).toFixed(0)+'<em>cm</em>';
+    document.getElementById('imisHN').innerHTML = (hn==null) ? '\u2013<em>cm</em>' : (hn*100).toFixed(0)+'<em>cm</em>';
+    document.getElementById('imisTA').innerHTML = (ta==null) ? '\u2013<em>\u00b0C</em>' : ta.toFixed(1)+'<em>\u00b0C</em>';
+    document.getElementById('imisVW').innerHTML = (gust==null)? '\u2013<em>km/h</em>' : (gust*3.6).toFixed(0)+'<em>km/h</em>';
+    tag.textContent = cached ? 'ultimo dato noto' : 'misura reale';
+    tag.className   = cached ? 'tag model' : 'tag';
+    document.getElementById('imisNote').innerHTML =
+      `Stazione automatica IMIS <b>${IMIS_STATION}</b> · SLF/WSL \u2014 rilevamento del
+       ${new Date(when).toLocaleString('it-CH',{day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'})}` +
+      (cached ? ' (dato in cache: il relay pubblico non risponde ora).' : '. Raffica massima sulle ultime 24 h.');
+  };
+
+  try{
+    const [meas, daily] = await Promise.all([
+      fetchJSON(`https://measurement-api.slf.ch/public/api/imis/station/${IMIS_STATION}/measurements`, true),
+      fetchJSON(`https://measurement-api.slf.ch/public/api/imis/daily-snow`, true).catch(()=>null)
+    ]);
+    const rows = (meas||[]).filter(r => r.measure_date);
+    if(!rows.length) throw new Error('vuoto');
+    const last = rows[rows.length-1];
+    const dsRow = daily ? daily.filter(x => x.station_code === IMIS_STATION)
+                               .sort((a,b)=> new Date(b.measure_date)-new Date(a.measure_date))[0] : null;
+    const data = {
+      hs:   last.HS ?? null,
+      hn:   dsRow ? (dsRow.HN_1D ?? null) : null,
+      ta:   last.TA_30MIN_MEAN ?? null,
+      gust: Math.max(...rows.slice(-48).map(r => r.VW_30MIN_MAX ?? 0)) || null,
+      when: last.measure_date
+    };
+    try{ localStorage.setItem('imis_'+IMIS_STATION, JSON.stringify(data)); }catch(e){}
+    paint(data.hs, data.hn, data.ta, data.gust, data.when, false);
+
+    if(data.hs != null && data.hs > 0 && data.hn != null && data.hn*100 >= 15)
+      pushAlert('info','\uD83C\uDFBF','Neve fresca a Bretaye',
+        `<b>${(data.hn*100).toFixed(0)} cm</b> caduti nelle ultime 24 h, ${(data.hs*100).toFixed(0)} cm al suolo.`);
+    renderAlerts();
+
+  }catch(e){
+    let cache = null;
+    try{ cache = JSON.parse(localStorage.getItem('imis_'+IMIS_STATION) || 'null'); }catch(err){}
+    if(cache){
+      paint(cache.hs, cache.hn, cache.ta, cache.gust, cache.when, true);
+    }else{
+      tag.textContent = 'non raggiungibile'; tag.className = 'tag model';
+      document.getElementById('imisNote').innerHTML =
+        `Lo SLF non invia gli header CORS su questa API, quindi il browser deve passare da un relay pubblico
+         che in questo momento non risponde. I valori di neve nel riquadro \u201cMontagna\u201d restano quelli del modello.
+         <a href="https://www.slf.ch/it/bollettino-valanghe-e-situazione-nivologica/valori-di-misura" target="_blank" rel="noopener" style="color:var(--accent)">Valori di misura SLF \u2192</a>`;
+    }
+  }
+}
+
+/* ============================================================
+   4) TRENI TPC (search.ch)
+   ============================================================ */
+async function loadTrains(){
+  const box = document.getElementById('trains');
+  try{
+    const j = await fetchJSON("https://search.ch/timetable/api/stationboard.json?stop=Villars-sur-Ollon&limit=6&show_delays=1");
+    const cs = j.connections || [];
+    if(!cs.length){ box.innerHTML = '<div class="srcnote">Nessuna partenza nelle prossime ore.</div>'; return; }
+    const now = new Date();
+    const zurichNow = new Date(now.toLocaleString('en-US',{timeZone:'Europe/Zurich'}));
+    box.innerHTML = cs.map(c => {
+      const t = new Date(c.time.replace(' ','T'));
+      const min = Math.round((t - zurichNow)/60000);
+      const delay = c.dep_delay && c.dep_delay !== '+0' ? c.dep_delay : null;
+      return `<div class="tr">
+        <div class="ln">${c.line || c['*L'] || c.type_name || '\u2014'}</div>
+        <div class="dst">${c.terminal?.name || '\u2014'}<small>${c.operator || ''}${delay ? ' · ritardo ' + delay + ' min' : ''}</small></div>
+        <div class="tm">${c.time.slice(11,16)}
+          <small class="${delay?'late':''}">${min <= 0 ? 'in partenza' : 'fra ' + min + ' min'}</small></div>
+      </div>`;
+    }).join('');
+  }catch(e){
+    box.innerHTML = '<div class="srcnote">Orari non disponibili al momento. <a href="https://tpc.ch/" target="_blank" rel="noopener" style="color:var(--accent)">Sito TPC \u2192</a></div>';
+  }
+}
+
+/* ============================================================
+   5) WEBCAM
+   ============================================================ */
+function buildCams(){
+  document.getElementById('cams').innerHTML = CAMS.map((c,i) =>
+    `<a class="cam" href="${c.link}" target="_blank" rel="noopener" title="Apri la webcam a schermo intero">
+       <img id="cam${i}" alt="${c.n}" loading="lazy"
+            onerror="this.style.display='none';this.parentNode.querySelector('.err').style.display='flex'">
+       <div class="err">Immagine non disponibile<br>clicca per aprire la webcam</div>
+       <div class="capt"><span>${c.n}</span><small>${c.d}</small></div>
+     </a>`).join('');
+  refreshCams();
+}
+function refreshCams(){
+  const ts = Date.now();
+  CAMS.forEach((c,i) => {
+    const el = document.getElementById('cam'+i);
+    if(el) el.src = c.u + (c.u.includes('?') ? '&' : '?') + '_=' + ts;
+  });
+}
+
+/* ---------- arco solare ---------- */
+function drawSun(sr, ss){
   const cv = document.getElementById('sunArc'), r = cv.getBoundingClientRect();
   cv.width = r.width*2; cv.height = r.height*2;
   const x = cv.getContext('2d'); x.scale(2,2);
@@ -401,13 +767,28 @@ function drawSun(sr,ss){
   x.fillStyle = (p>0&&p<1)?'#ffd07a':'#5a6b83'; x.beginPath(); x.arc(sx,sy,5.5,0,7); x.fill();
 }
 
-document.getElementById('altSwitch').addEventListener('click', e=>{
+/* ---------- orchestrazione ---------- */
+async function loadAll(){
+  ALERTS = [];
+  document.querySelectorAll('.card').forEach(c => c.classList.add('loading'));
+  await Promise.allSettled([ loadWeather(), loadAvalanche(), loadIMIS(), loadTrains() ]);
+  renderAlerts();
+  refreshCams();
+  document.querySelectorAll('.card').forEach(c => c.classList.remove('loading'));
+  document.getElementById('stamp').textContent = "Ultimo aggiornamento: " + new Date().toLocaleTimeString('it-CH');
+}
+
+document.getElementById('altSwitch').addEventListener('click', e => {
   const b = e.target.closest('button'); if(!b) return;
-  document.querySelectorAll('#altSwitch button').forEach(x=>x.classList.remove('on'));
-  b.classList.add('on'); idx = +b.dataset.i; load();
+  document.querySelectorAll('#altSwitch button').forEach(x => x.classList.remove('on'));
+  b.classList.add('on'); idx = +b.dataset.i;
+  ALERTS = []; loadWeather().then(renderAlerts);
 });
-window.addEventListener('resize', ()=>{ const s=document.getElementById('sunrise').textContent; if(s!=='–') load(); });
-load(); setInterval(load, 15*60*1000);
+
+buildCams();
+loadAll();
+setInterval(loadAll, CFG.refreshMin*60*1000);
+setInterval(refreshCams, 5*60*1000);
 </script>
 </body>
 </html>
